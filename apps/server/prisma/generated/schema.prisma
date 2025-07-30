@@ -1,0 +1,308 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String  @id @default(auto()) @map("_id") @db.ObjectId
+  email         String  @unique
+  name          String
+  emailVerified Boolean @default(false)
+  image         String?
+
+  // Business logic fields
+  major          String?
+  graduationYear Int?
+  dormLocation   String?
+  phoneNumber    String?
+  profileImage   String?
+  universityId   String     @db.ObjectId
+  university     University @relation(fields: [universityId], references: [id])
+
+  // Reputation system
+  reputationScore Float @default(5.0)
+  totalTrades     Int   @default(0)
+
+  // Timestamps
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastActive DateTime @default(now())
+
+  // Relations
+  items            Item[]
+  sentMessages     Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageReceiver")
+  tradesSent       Trade[]   @relation("TradeSender")
+  tradesReceived   Trade[]   @relation("TradeReceiver")
+  reviews          Review[]  @relation("ReviewReceiver")
+  reviewsGiven     Review[]  @relation("ReviewGiver")
+  reports          Report[]
+
+  // Authentication relations
+  sessions Session[]
+  accounts Account[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+  accountId             String
+  providerId            String
+  userId                String    @db.ObjectId
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@map("verifications")
+}
+
+model University {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  domain   String  @unique // e.g., "stanford.edu"
+  location String
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users User[]
+  items Item[]
+
+  @@map("universities")
+}
+
+model Item {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  description    String
+  category       ItemCategory
+  condition      ItemCondition
+  images         String[] // Array of image URLs
+  estimatedValue Float? // Optional estimated value in USD
+
+  // Location
+  campusLocation String? // "Main Library", "Engineering Building", etc.
+
+  // Trading preferences
+  lookingFor     String? // What they want in return
+  isOpenToOffers Boolean @default(true)
+
+  // Status
+  status ItemStatus @default(AVAILABLE)
+
+  // Relations
+  ownerId      String     @db.ObjectId
+  owner        User       @relation(fields: [ownerId], references: [id])
+  universityId String     @db.ObjectId
+  university   University @relation(fields: [universityId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  messages Message[]
+  reports  Report[]
+
+  @@map("items")
+}
+
+model Trade {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Parties involved
+  senderId   String @db.ObjectId
+  sender     User   @relation("TradeSender", fields: [senderId], references: [id])
+  receiverId String @db.ObjectId
+  receiver   User   @relation("TradeReceiver", fields: [receiverId], references: [id])
+
+  // Items being traded
+  senderItemIds   String[] @db.ObjectId
+  receiverItemIds String[] @db.ObjectId
+
+  // Trade details
+  status          TradeStatus @default(PENDING)
+  proposalMessage String? // Initial trade proposal message
+
+  // Meeting details
+  meetingLocation String?
+  meetingTime     DateTime?
+
+  // Completion
+  senderConfirmed   Boolean   @default(false)
+  receiverConfirmed Boolean   @default(false)
+  completedAt       DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  messages Message[]
+  reviews  Review[]
+
+  @@map("trades")
+}
+
+model Message {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  content String
+
+  // Relations
+  senderId   String @db.ObjectId
+  sender     User   @relation("MessageSender", fields: [senderId], references: [id])
+  receiverId String @db.ObjectId
+  receiver   User   @relation("MessageReceiver", fields: [receiverId], references: [id])
+
+  // Context - either about an item or part of a trade
+  itemId  String? @db.ObjectId
+  item    Item?   @relation(fields: [itemId], references: [id])
+  tradeId String? @db.ObjectId
+  trade   Trade?  @relation(fields: [tradeId], references: [id])
+
+  // Message status
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("messages")
+}
+
+model Review {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  rating  Int // 1-5 stars
+  comment String?
+
+  // Relations
+  tradeId    String @db.ObjectId
+  trade      Trade  @relation(fields: [tradeId], references: [id])
+  reviewerId String @db.ObjectId
+  reviewer   User   @relation("ReviewGiver", fields: [reviewerId], references: [id])
+  revieweeId String @db.ObjectId
+  reviewee   User   @relation("ReviewReceiver", fields: [revieweeId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews")
+}
+
+model Report {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  reason      ReportReason
+  description String?
+  status      ReportStatus @default(PENDING)
+
+  // Relations
+  reporterId String  @db.ObjectId
+  reporter   User    @relation(fields: [reporterId], references: [id])
+  itemId     String? @db.ObjectId
+  item       Item?   @relation(fields: [itemId], references: [id])
+
+  // Admin handling
+  resolvedAt DateTime?
+  adminNotes String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reports")
+}
+
+// Enums
+enum ItemCategory {
+  TEXTBOOKS
+  ELECTRONICS
+  FURNITURE
+  CLOTHING
+  SCHOOL_SUPPLIES
+  SPORTS_EQUIPMENT
+  KITCHEN_APPLIANCES
+  DECORATIONS
+  GAMES
+  OTHER
+}
+
+enum ItemCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum ItemStatus {
+  AVAILABLE
+  PENDING_TRADE
+  TRADED
+  REMOVED
+}
+
+enum TradeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT
+  SPAM
+  FRAUD
+  HARASSMENT
+  FAKE_ITEM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
