@@ -1,9 +1,13 @@
-import type { NextRequest } from "next/server";
+import type { Context as HonoContext } from "hono";
 import { auth } from "./auth";
 
-export async function createContext(req: NextRequest) {
+export type CreateContextOptions = {
+  context: HonoContext;
+};
+
+export async function createContext({ context }: CreateContextOptions) {
   const session = await auth.api.getSession({
-    headers: req.headers,
+    headers: context.req.raw.headers,
   });
   return {
     session,

@@ -1,30 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
+    "target": "ESNext",
+    "module": "ESNext",
     "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-	  "composite": true,
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+      ,
+      "prisma": ["node_modules/prisma"]
+    },
+    "outDir": "./dist",
+    "types": [
+      "bun"
     ],
-	"paths": {
-		"@/*": ["./src/*"]
-		,
-		"prisma": ["node_modules/prisma"]
-	},
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+    "composite": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx"
+  }
 }

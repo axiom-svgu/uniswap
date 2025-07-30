@@ -1,6 +1,6 @@
 # uniswap
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Next, TRPC, and more.
+This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Hono, TRPC, and more.
 
 ## Features
 
@@ -8,7 +8,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Next.js** - Full-stack React framework
 - **TailwindCSS** - Utility-first CSS for rapid UI development
 - **shadcn/ui** - Reusable UI components
-- **Next.js** - Full-stack React framework
+- **Hono** - Lightweight, performant server framework
 - **tRPC** - End-to-end type-safe APIs
 - **Bun** - Runtime environment
 - **Prisma** - TypeScript-first ORM
@@ -53,7 +53,7 @@ The API is running at [http://localhost:3000](http://localhost:3000).
 uniswap/
 ├── apps/
 │   ├── web/         # Frontend application (Next.js)
-│   └── server/      # Backend API (Next, TRPC)
+│   └── server/      # Backend API (Hono, TRPC)
 ```
 
 ## Available Scripts
